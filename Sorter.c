@@ -97,6 +97,46 @@ int main(int argc, char* argv[])
 		printf("ERROR: column to sort by not given\n");
 		return -1;
 	}
+	if(argc > 3){
+		if(strcmp(argv[3], "-d") != 0 && strcmp(argv[3], "-o") != 0){
+			printf("ERROR: input/output directory command not given\n");
+			return -1;
+		}
+
+		if(argc == 4 || argc == 6){
+			printf("ERROR: input/output directory not given\n");
+			return -1;
+		}
+		if(argc == 7 && strcmp(argv[5], "-o") != 0){
+			printf("ERROR: output directory command not given\n");
+			return -1;
+		}
+	}
+	char* base = (char*) malloc(sizeof(char) * 2);
+	base[0] = '.';
+	base[1] = '/';
+
+	if(argc > 3 && strcmp(argv[3], "-d") == 0)
+	{
+		base = (char*) realloc(base, strlen(base) + strlen(argv[4]));
+		strcat(base, argv[4]);
+	}
+
+	DIR* dir = opendir(base);
+	if(!dir){
+		printf("ERROR: directory not found\n");
+		free(base);
+		return -1;
+	}
+	struct dirent* newFile = readdir(dir);
+	//if(newFile->
+
+	/**if(() == NULL){
+		
+	}
+	**/
+	free(base);
+/**
 
 	//Get column heading and create copy of it
 	char* header = (char*) calloc(1024, sizeof(char));
@@ -206,6 +246,8 @@ int main(int argc, char* argv[])
 	free(header);
 	free(origRow);
 	free(list);
+
+**/
 
 	return 0;
 }

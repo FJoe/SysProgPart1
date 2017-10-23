@@ -1,0 +1,66 @@
+=====Design=====
+
+We created 2 structs for this program, DataRow and DataCompare.
+
+union DataCompare represented the data the user wanted to sort by. We chose to use union because we can change the datatype between the two without using extra space in memory.
+There are 2 fields in DataCompare:
+	double numData - numeric data, used double as it can encompass the largest amount of data
+	char * stringData - string data, used to store strings for comparison
+
+struct DataRow represented each row inside the csv. 
+There are 3 fields in DataRow:
+	char DataType - represented the type of data that we needed to compare. 'n' represents numeric data types and 's' represents string data types
+	char * Data - pointer to the string that holds all data. E.G. "firstname, lastname, age, birthdate"
+	DataCompare * dataCompare -  points to a struct of DataCompare that tells us which field we are comparing. 
+
+How the DataRow would be represented: 
+{DataType = 'n', Data = "Peter, Jeng, 20, 08/15/1997", dataCompare->numData = 20}. Data follows the order: "firstname, lastname, age, birthdate"
+
+By using the struct DataRow and union DataCompare, we are able to store information regarding how we need to process the data as well as the exact data that we need to use to compare between one another.
+
+Inside Sorter.c, we used a double pointer array called DataRow ** List. This list is what is being sent into mergeSort and each index is a DataRow.
+By passing the array of struct into MergeSort, we can sort in a generic manner without having to change the parameters of the function (Ex. sort between string and numbers).
+
+Inside the MergeSort, we first recursively call upon mergeSort to split the arrays into subarrays as is done in the algorithm. Once the arrays are split to its atomic length of 1, we merge these arrays back together. By calling merge(), we are putting the subarrays back into the original arrays while doing comparisons(sorting) in the subarrays. At the end of the recursive call, the original array will be merged and sorted.
+
+Inside Sorter.c, we are also doing checks on the user input to ensure the program functions correctly.
+The tests are:
+	1) Check to see if we have the correct number of arguments
+	2) Check to see if we are sorting by column '-c'
+	3) Check to see if we are given a file to sort or if it exists
+	4) Check to see if the given column exists in the movie_metadata.csv file
+
+Afterwards, we implement a trimSpace function that removes leading and trailing spaces. This will ensure data integrity during sorting.
+
+At the end of the program, we free up all pointers to ensure no memory leaks occur.
+
+=====Assumptions=====
+Assumed the column names are the ones given in the movie_metadata.csv
+
+=====Difficulties=====
+Creating the MergeSort was pretty difficult because debugging the MergeSort step by step using recursion took a very long time.
+At first, we used a simple int array to test our MergeSort to ensure that sorting was done correctly. However, the results were not the ones we expected so we had to take our time to step through our stackframes to see what went wrong. At the end, we were able to locate the problems and fix MergeSort. Implementation of DataRow ** List did not have any problems inside the MergeSort algorithim
+
+The movie_title had commas which caused problems with our csv delimiters. We realized this problem because a majority of rows adhered to the sorting algorithim, but there would be random data that made no sense (e.g: 1.0, 1.0, 1.1, 1.2, 1.3, 5.0, 1.4, 2.1, the 5.0 was out of place). This problem was hard to catch because we had to slowly analyze the data to see why some columns did not sort properly. We realized that the ',' delimiter was causing problems with the comma in the title and this made it difficult to work with out code. We were unable to work around this error so some rows were not sorted properly because the delimiter could not be differentiated with the commas in the title.
+
+=====Testing Procedures=====
+We broke the testing into multiple pieces to ensure each part worked independently.
+1) Tested trimSpace on small strings
+2) MergeSort on int arrays to ensure sorting was correct
+3) Tested the read file to ensure we are storing the list correctly(replica of csv file)
+4) Joined each step together until we could sort test.csv (a small file we wrote containing test data)
+5) Used ./sorter on movie_metadata.csv to ensure sorting could be done on large datasets.
+
+HOW TO USE OUR CODE:
+1) Unpack tar file: tar xvf Project0.tar
+2) Run make all on the terminal
+3) Type: cat movie_metadata.csv | ./sorter -c <column to sort> > sortedmovies.csv
+
+
+
+
+
+
+
+
+

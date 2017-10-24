@@ -11,6 +11,10 @@ FILE** getcsvFiles(char* dirName){
 		return NULL;
 	}
 
+	if(strcmp(dirName, "./") != 0){
+		dirName = realloc(dirName, strlen(dirName) + strlen("/"));
+		strcat(dirName, "/");
+	}
 
 	getcsvFilesHelp(files, dirName, dir, size);
 
@@ -187,6 +191,7 @@ int main(int argc, char* argv[])
 	if(files == NULL){
 		printf("ERROR: directory not found\n");
 		free(base);
+		return -1;
 	}
 	
 

@@ -38,10 +38,10 @@ struct data_row{
 typedef struct data_row DataRow;
 
 //Gets pointer to array of file pointers of type csv files. Also traverses through any directories inside dir
-FILE** getcsvFiles(DIR* dir);
+FILE** getcsvFiles(char* dir);
 
 //Helper method to getcsvFiles
-void getcsvFilesHelp(FILE** files, DIR* dir, int curSize);
+void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize);
 
 //Trims leading and trailing spaces from a string
 char* trimSpace(char* str);

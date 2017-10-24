@@ -1,56 +1,64 @@
 #include "Sorter.h"
 #include "MergeSort.c"
 
-FILE** getcsvFiles(DIR* dir){
+FILE** getcsvFiles(char* dirName){
 	FILE** files = (FILE**) malloc(sizeof(FILE*) * 255);
-	getcsvFilesHelp(files, dir, 0);
+	int* size = (int*) malloc(sizeof(int));
+	*size = 0;
+
+	DIR* dir = opendir(dirName);
+	if(!dir){
+		return NULL;
+	}
+
+
+	getcsvFilesHelp(files, dirName, dir, size);
+
+	free(size);
 	return files;
 }
 
-void getcsvFilesHelp(FILE** files, DIR* dir, int curSize){
-	if(curSize == 255)
+void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize){
+	if((*curSize) == 255)
 		return;
 
 	struct dirent* newDirent = readdir(dir);
-printf("%s\n", newDirent->d_name);
-	
-	if(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0)
-		return;
 
 	while(newDirent != NULL){
-		if(newDirent->d_type == DT_DIR)
+		char* base = strdup(dirName);
+		base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
+		strcat(base, newDirent->d_name);
+
+		if(newDirent->d_type == DT_DIR && !(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0))
 		{
-			char* base = (char*) malloc(sizeof(char) * 2);
-			base[0] = '.';
-			base[1] = '/';
-
-			base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
-			strcat(base, newDirent->d_name);
-
 			DIR* newDir = opendir(base);
-			getcsvFilesHelp(files, newDir, curSize);			
+			if(newDir != NULL && strcmp(base, "./.git") != 0)
+			{
+				base = (char*) realloc(base, strlen(base) + strlen("/"));
+				strcat(base, "/");
+				getcsvFilesHelp(files, base, newDir, curSize);
+			}			
 			
-			free(base);
+			
 		}
 		else{
 			char* point = strchr(newDirent->d_name, '.');
 			if(point != NULL && strcmp(point, ".csv") == 0){
-				printf("%s\n", newDirent->d_name);
-				/**
-				FILE* newFile = (FILE*)malloc(sizeof(FILE));
-				newFile = fopen(newDirent->d_name, "r");
+				FILE* newFile  = (FILE*)malloc(sizeof(FILE));
+				newFile = fopen(base, "r");
 				if(newFile != NULL){
-					files[curSize] = newFile;
-					curSize++;
+					files[*curSize] = newFile;
+					(*curSize) = 1 + (*curSize);
 				}
-				**/
+				
 			}
 
 		}
+		free(base);
 		newDirent = readdir(dir);
 	}
 	
-} 
+}
 
 char* trimSpace(char* str){
 	int end = strlen(str) - 1;
@@ -163,9 +171,10 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 	}
-	char* base = (char*) malloc(sizeof(char) * 2);
+	char* base = (char*) malloc(sizeof(char) * 3);
 	base[0] = '.';
 	base[1] = '/';
+	base[2] = '\0';
 
 	if(argc > 3 && strcmp(argv[3], "-d") == 0)
 	{
@@ -173,26 +182,22 @@ int main(int argc, char* argv[])
 		strcat(base, argv[4]);
 	}
 
-	DIR* dir = opendir(base);
-	if(!dir){
+	FILE** files = getcsvFiles(base);
+
+	if(files == NULL){
 		printf("ERROR: directory not found\n");
 		free(base);
-		return -1;
 	}
-
-	FILE** files = getcsvFiles(dir);
 	
 
-	//if(newFile->
-
-	/**if(() == NULL){
-		
-	}
-	**/
 	free(base);
 	int i = 0;
+
 	while(files[i] != NULL)
+	{
 		free(files[i]);
+		i++;
+	}
 	free(files);
 /**
 

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <sys/types.h>
 
 #ifndef SORTER_H
 #define SORTER_H
@@ -35,6 +36,12 @@ struct data_row{
 	DataCompare* dataCompare;	
 };
 typedef struct data_row DataRow;
+
+//Gets pointer to array of file pointers of type csv files. Also traverses through any directories inside dir
+FILE** getcsvFiles(DIR* dir);
+
+//Helper method to getcsvFiles
+void getcsvFilesHelp(FILE** files, DIR* dir, int curSize);
 
 //Trims leading and trailing spaces from a string
 char* trimSpace(char* str);

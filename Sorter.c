@@ -1,6 +1,57 @@
 #include "Sorter.h"
 #include "MergeSort.c"
 
+FILE** getcsvFiles(DIR* dir){
+	FILE** files = (FILE**) malloc(sizeof(FILE*) * 255);
+	getcsvFilesHelp(files, dir, 0);
+	return files;
+}
+
+void getcsvFilesHelp(FILE** files, DIR* dir, int curSize){
+	if(curSize == 255)
+		return;
+
+	struct dirent* newDirent = readdir(dir);
+printf("%s\n", newDirent->d_name);
+	
+	if(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0)
+		return;
+
+	while(newDirent != NULL){
+		if(newDirent->d_type == DT_DIR)
+		{
+			char* base = (char*) malloc(sizeof(char) * 2);
+			base[0] = '.';
+			base[1] = '/';
+
+			base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
+			strcat(base, newDirent->d_name);
+
+			DIR* newDir = opendir(base);
+			getcsvFilesHelp(files, newDir, curSize);			
+			
+			free(base);
+		}
+		else{
+			char* point = strchr(newDirent->d_name, '.');
+			if(point != NULL && strcmp(point, ".csv") == 0){
+				printf("%s\n", newDirent->d_name);
+				/**
+				FILE* newFile = (FILE*)malloc(sizeof(FILE));
+				newFile = fopen(newDirent->d_name, "r");
+				if(newFile != NULL){
+					files[curSize] = newFile;
+					curSize++;
+				}
+				**/
+			}
+
+		}
+		newDirent = readdir(dir);
+	}
+	
+} 
+
 char* trimSpace(char* str){
 	int end = strlen(str) - 1;
 	while(str[end] == ' ' || str[end] == '\n' || str[end] == '\r')
@@ -128,7 +179,10 @@ int main(int argc, char* argv[])
 		free(base);
 		return -1;
 	}
-	struct dirent* newFile = readdir(dir);
+
+	FILE** files = getcsvFiles(dir);
+	
+
 	//if(newFile->
 
 	/**if(() == NULL){
@@ -136,6 +190,10 @@ int main(int argc, char* argv[])
 	}
 	**/
 	free(base);
+	int i = 0;
+	while(files[i] != NULL)
+		free(files[i]);
+	free(files);
 /**
 
 	//Get column heading and create copy of it

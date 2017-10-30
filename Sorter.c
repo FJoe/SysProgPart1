@@ -2,7 +2,7 @@
 #include "MergeSort.c"
 #include <unistd.h>
 
-
+int count = 1;
 
 FILE** getcsvFiles(char* dirName, int * counter){
 	FILE** files = (FILE**) malloc(sizeof(FILE*) * 255);
@@ -21,8 +21,11 @@ FILE** getcsvFiles(char* dirName, int * counter){
 		dirName = realloc(dirName, strlen(dirName) + strlen("/"));
 		strcat(dirName, "/");	
 	}
-		
 
+
+	getcsvFilesHelp(files, dirName, dir, size, counter);
+		
+	/**
 	pid_t pid = 0;
 
 	pid = fork();
@@ -33,13 +36,13 @@ FILE** getcsvFiles(char* dirName, int * counter){
 	if(pid == 0){	
 		(*counter)++;
 		printf("reached\n");
-		getcsvFilesHelp(files, dirName, dir, size, counter);
 		
 	}
 	else{
 		printf("Child pid: %d\n", (int)getpid());
 		wait();
 	}
+	**/
 
 	free(size);
 	return files;
@@ -48,6 +51,8 @@ FILE** getcsvFiles(char* dirName, int * counter){
 void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* counter){
 	if((*curSize) == 255)
 		return;
+
+	int status = 0;
 
 	struct dirent* newDirent = readdir(dir);
 
@@ -63,10 +68,20 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* c
 			{
 				base = (char*) realloc(base, strlen(base) + strlen("/"));
 				strcat(base, "/");
-				getcsvFilesHelp(files, base, newDir, curSize, counter);
+
+				pid_t pidDir = fork();
+
+				if(pidDir == 0){
+					getcsvFilesHelp(files, base, newDir, curSize, counter);	
+					_exit(1);
+				}
+				else{
+					
+					printf("Child pid: %d Current pid:%d Current dir: %s\n", (int)pidDir, (int)getpid(), base);
+					wait(*counter);		
+				} 
+				
 			}			
-			
-			
 		}
 		else{
 			char* point = strchr(newDirent->d_name, '.');
@@ -82,8 +97,8 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* c
 
 		}
 		free(base);
-		newDirent = readdir(dir);
-	}
+		newDirent = readdir(dir); 
+	} 
 	
 }
 
@@ -323,10 +338,11 @@ int main(int argc, char* argv[])
 		base = (char*) realloc(base, strlen(base) + strlen(argv[4]));
 		strcat(base, argv[4]);
 	}
-	printf("Initial PID: %d\n", (int)getpid());
+	printf("Initial PID: %d Current dir: %s\n", (int)getpid(), base);
 
 	int * counter = (int *)malloc(sizeof(int));
-	*counter = 0;
+	//current process counts as 1
+	*counter = 1;
 
 	FILE** files = getcsvFiles(base, counter);
 

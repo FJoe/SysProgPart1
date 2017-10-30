@@ -1,28 +1,51 @@
 #include "Sorter.h"
 #include "MergeSort.c"
+#include <unistd.h>
 
-FILE** getcsvFiles(char* dirName){
+
+
+FILE** getcsvFiles(char* dirName, int * counter){
 	FILE** files = (FILE**) malloc(sizeof(FILE*) * 255);
 	int* size = (int*) malloc(sizeof(int));
 	*size = 0;
 
+	
 	DIR* dir = opendir(dirName);
+
 	if(!dir){
 		return NULL;
 	}
 
 	if(strcmp(dirName, "./") != 0){
+		printf("reached\n");
 		dirName = realloc(dirName, strlen(dirName) + strlen("/"));
-		strcat(dirName, "/");
+		strcat(dirName, "/");	
 	}
+		
 
-	getcsvFilesHelp(files, dirName, dir, size);
+	pid_t pid = 0;
+
+	pid = fork();
+
+	if(pid < 0){
+		printf("fail");
+	}
+	if(pid == 0){	
+		(*counter)++;
+		printf("reached\n");
+		getcsvFilesHelp(files, dirName, dir, size, counter);
+		
+	}
+	else{
+		printf("Child pid: %d\n", (int)getpid());
+		wait();
+	}
 
 	free(size);
 	return files;
 }
 
-void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize){
+void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* counter){
 	if((*curSize) == 255)
 		return;
 
@@ -40,7 +63,7 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize){
 			{
 				base = (char*) realloc(base, strlen(base) + strlen("/"));
 				strcat(base, "/");
-				getcsvFilesHelp(files, base, newDir, curSize);
+				getcsvFilesHelp(files, base, newDir, curSize, counter);
 			}			
 			
 			
@@ -51,7 +74,7 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize){
 				FILE* newFile  = (FILE*)malloc(sizeof(FILE));
 				newFile = fopen(base, "r");
 				if(newFile != NULL){
-					files[*curSize] = newFile;
+					sort(newFile);
 					(*curSize) = 1 + (*curSize);
 				}
 				
@@ -145,70 +168,12 @@ char getDataType(char* data){
 		
 }
 
-int main(int argc, char* argv[])
-{
-	//Check if valid input
-	if(argc < 2){
-		printf("ERROR: no arguments\n");
-		return -1;
-	}
-	if(strcmp(argv[1], "-c") != 0){
-		printf("ERROR: not sorting by columns\n");
-		return -1;
-	}
-	if(argc < 3){
-		printf("ERROR: column to sort by not given\n");
-		return -1;
-	}
-	if(argc > 3){
-		if(strcmp(argv[3], "-d") != 0 && strcmp(argv[3], "-o") != 0){
-			printf("ERROR: input/output directory command not given\n");
-			return -1;
-		}
-
-		if(argc == 4 || argc == 6){
-			printf("ERROR: input/output directory not given\n");
-			return -1;
-		}
-		if(argc == 7 && strcmp(argv[5], "-o") != 0){
-			printf("ERROR: output directory command not given\n");
-			return -1;
-		}
-	}
-	char* base = (char*) malloc(sizeof(char) * 3);
-	base[0] = '.';
-	base[1] = '/';
-	base[2] = '\0';
-
-	if(argc > 3 && strcmp(argv[3], "-d") == 0)
-	{
-		base = (char*) realloc(base, strlen(base) + strlen(argv[4]));
-		strcat(base, argv[4]);
-	}
-
-	FILE** files = getcsvFiles(base);
-
-	if(files == NULL){
-		printf("ERROR: directory not found\n");
-		free(base);
-		return -1;
-	}
-	
-
-	free(base);
-	int i = 0;
-
-	while(files[i] != NULL)
-	{
-		free(files[i]);
-		i++;
-	}
-	free(files);
+void sort(FILE* file){
 /**
 
 	//Get column heading and create copy of it
 	char* header = (char*) calloc(1024, sizeof(char));
-	if(fgets(header, sizeof(char) * 1024, stdin) == NULL){
+	if(fgets(header, sizeof(char) * 1024, file) == NULL){
 		printf("ERROR: file empty");
 		return -1;
 	}
@@ -316,6 +281,75 @@ int main(int argc, char* argv[])
 	free(list);
 
 **/
+}
+
+int main(int argc, char* argv[])
+{
+	//Check if valid input
+	if(argc < 2){
+		printf("ERROR: no arguments\n");
+		return -1;
+	}
+	if(strcmp(argv[1], "-c") != 0){
+		printf("ERROR: not sorting by columns\n");
+		return -1;
+	}
+	if(argc < 3){
+		printf("ERROR: column to sort by not given\n");
+		return -1;
+	}
+	if(argc > 3){
+		if(strcmp(argv[3], "-d") != 0 && strcmp(argv[3], "-o") != 0){
+			printf("ERROR: input/output directory command not given\n");
+			return -1;
+		}
+
+		if(argc == 4 || argc == 6){
+			printf("ERROR: input/output directory not given\n");
+			return -1;
+		}
+		if(argc == 7 && strcmp(argv[5], "-o") != 0){
+			printf("ERROR: output directory command not given\n");
+			return -1;
+		}
+	}
+	char* base = (char*) malloc(sizeof(char) * 3);
+	base[0] = '.';
+	base[1] = '/';
+	base[2] = '\0';
+
+	if(argc > 3 && strcmp(argv[3], "-d") == 0)
+	{
+		base = (char*) realloc(base, strlen(base) + strlen(argv[4]));
+		strcat(base, argv[4]);
+	}
+	printf("Initial PID: %d\n", (int)getpid());
+
+	int * counter = (int *)malloc(sizeof(int));
+	*counter = 0;
+
+	FILE** files = getcsvFiles(base, counter);
+
+	if(files == NULL){
+		printf("ERROR: directory not found\n");
+		free(base);
+		return -1;
+	}
+	
+
+	free(base);
+	int i = 0;
+
+	while(files[i] != NULL)
+	{
+		free(files[i]);
+		i++;
+	}
+
+	printf("process created: %d\n", *counter); 
+	free(counter);
+	free(files);
+
 
 	return 0;
 }

@@ -227,6 +227,8 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	strcat(outputFile, "-sorted-");
 	strcat(outputFile, colToSort);
 	strcat(outputFile, ".csv");
+
+	printf("FileDir: %s   |   OutputFile: %s   |   OutDir: %s\n\n", fileDir, outputFile, outDir);
 	
 	FILE* outfp;
 	outfp = fopen(outputFile, "w");
@@ -364,8 +366,8 @@ int main(int argc, char* argv[])
 		strcat(base, argv[4]);
 	}
 
-	if((argc > 3 && argc < 5 && strcmp(argv[3], "-o") == 0) || (argc > 5 && strcmp(argv[5], "-o") == 0)){		
-		if(argc < 5){
+	if((argc > 3 && argc < 6 && strcmp(argv[3], "-o") == 0) || (argc > 5 && strcmp(argv[5], "-o") == 0)){		
+		if(argc < 6){
 			outputBase = (char*) realloc(outputBase, strlen(outputBase) + strlen(argv[4]));
 			strcat(outputBase, argv[4]);
 		}

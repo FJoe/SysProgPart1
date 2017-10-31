@@ -227,16 +227,13 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	strcat(outputFile, "-sorted-");
 	strcat(outputFile, colToSort);
 	strcat(outputFile, ".csv");
-
-	printf("FileDir: %s   |   OutputFile: %s   |   OutDir: %s\n\n", fileDir, outputFile, outDir);
 	
 	FILE* outfp;
-	outfp = fopen(outputFile, "w+");
+	outfp = fopen(outputFile, "w");
 
 	//Print column headers to output file
 	fprintf(outfp, header);
 
-/**
 	//Creating list of DataRow
 	DataRow** list = (DataRow**) malloc(sizeof(DataRow*) * 20000);
 	char dataType = getDataType(colToSort);
@@ -305,7 +302,7 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	}
 
 	//Sort list
-	//mergeSort(list, 0, (curRowNum -1));
+	mergeSort(list, 0, (curRowNum -1));
 
 	//Prints list then frees it
 	int j;	
@@ -320,7 +317,8 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	free(header);
 	free(origRow);
 	free(list);
-**/
+
+	fclose(outfp);
 }
 
 int main(int argc, char* argv[])
@@ -358,6 +356,7 @@ int main(int argc, char* argv[])
 	base[0] = '.';
 	base[1] = '/';
 	base[2] = '\0';
+	char* outputBase = strdup(base);
 
 	if(argc > 3 && strcmp(argv[3], "-d") == 0)
 	{
@@ -365,8 +364,7 @@ int main(int argc, char* argv[])
 		strcat(base, argv[4]);
 	}
 
-	char* outputBase = strdup(base);
-	if((argc > 3 && argc < 5 && strcmp(argv[3], "-o") == 0) || (argc > 3 && strcmp(argv[5], "-o") == 0)){		
+	if((argc > 3 && argc < 5 && strcmp(argv[3], "-o") == 0) || (argc > 5 && strcmp(argv[5], "-o") == 0)){		
 		if(argc < 5){
 			outputBase = (char*) realloc(outputBase, strlen(outputBase) + strlen(argv[4]));
 			strcat(outputBase, argv[4]);

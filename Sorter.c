@@ -52,7 +52,7 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* c
 	if((*curSize) == 255)
 		return;
 
-	int status = 0;
+	//int status = 0;
 
 	struct dirent* newDirent = readdir(dir);
 
@@ -78,7 +78,7 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* c
 				else{
 					
 					printf("Child pid: %d Current pid:%d Current dir: %s\n", (int)pidDir, (int)getpid(), base);
-					wait(*counter);		
+					wait(counter);		
 				} 
 				
 			}			

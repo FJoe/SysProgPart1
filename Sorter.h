@@ -11,6 +11,8 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #ifndef SORTER_H
 #define SORTER_H

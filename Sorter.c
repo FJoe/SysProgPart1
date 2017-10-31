@@ -1,6 +1,7 @@
 #include "Sorter.h"
 #include "MergeSort.c"
 #include <unistd.h>
+#include <sys/mman.h>
 
 int count = 1;
 
@@ -73,12 +74,12 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* c
 
 				if(pidDir == 0){
 					getcsvFilesHelp(files, base, newDir, curSize, counter);	
-					_exit(1);
+					_exit(0);
 				}
 				else{
-					
+					(*counter)++;
 					printf("Child pid: %d Current pid:%d Current dir: %s\n", (int)pidDir, (int)getpid(), base);
-					wait(*counter);		
+					wait();		
 				} 
 				
 			}			
@@ -89,7 +90,19 @@ void getcsvFilesHelp(FILE** files, char* dirName, DIR* dir, int* curSize, int* c
 				FILE* newFile  = (FILE*)malloc(sizeof(FILE));
 				newFile = fopen(base, "r");
 				if(newFile != NULL){
-					sort(newFile);
+					
+
+					pid_t pidFile = fork();
+
+					if(pidFile == 0){
+						sort(newFile);
+						_exit(0);
+					}
+					else{
+						(*counter)++;
+						printf("Child pid: %d Current pid:%d Current dir: %s curSize: %d\n", (int)pidFile, (int)getpid(), base, *curSize);
+						wait();		
+					} 
 					(*curSize) = 1 + (*curSize);
 				}
 				
@@ -340,7 +353,7 @@ int main(int argc, char* argv[])
 	}
 	printf("Initial PID: %d Current dir: %s\n", (int)getpid(), base);
 
-	int * counter = (int *)malloc(sizeof(int));
+	int * counter = (int *)mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 	//current process counts as 1
 	*counter = 1;
 
@@ -363,7 +376,7 @@ int main(int argc, char* argv[])
 	}
 
 	printf("process created: %d\n", *counter); 
-	free(counter);
+	//free(counter);
 	free(files);
 
 

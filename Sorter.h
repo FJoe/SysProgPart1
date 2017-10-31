@@ -40,13 +40,13 @@ struct data_row{
 typedef struct data_row DataRow;
 
 //Gets pointer to array of file pointers of type csv files. Also traverses through any directories inside dir
-void sortcsvFiles(char* dir, char* outputDir, int* counter);
+void sortcsvFiles(char* dir, char* outputDir, char* colToSort, int* counter);
 
 //Helper method to getcsvFiles
-void sortcsvFilesHelp(char* dirName, DIR* dir, DIR* outputDir, int* counter);
+void sortcsvFilesHelp(char* dirName, DIR* dir, char* outputDir, char* colToSort, int* counter);
 
 //sort csv file
-void sort(FILE * file, DIR* dir);
+void sort(char* fileName, char* outDir, char* colToSort);
 
 //Trims leading and trailing spaces from a string
 char* trimSpace(char* str);

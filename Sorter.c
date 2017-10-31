@@ -85,7 +85,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, DIR* outDir, int* counter){
 		free(base);
 		newDirent = readdir(dir); 
 	} 
-	wait(&status);		
+	while(wait(NULL) > 0){}		
 }
 
 

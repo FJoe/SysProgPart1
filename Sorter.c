@@ -147,7 +147,6 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 					prevDash = 1;
 				else
 					prevDash = 0;
-				printf("%s\n", nextSep);
 			}
 		}
 		if(sortedBy != NULL)
@@ -175,6 +174,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				//Parent process continues sorting csv files in current directory
 				else{
 					(*counter)++;
+					printf("%d, ", (int)pidDir);
 					//printf("Child pid: %d Current pid:%d Current counter: %d Current dir: %s\n", (int)pidDir, (int)getpid(), *counter, base);	
 				} 
 				
@@ -203,6 +203,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				//Parent process continues sorting csv files in current directory
 				else{
 					(*counter)++;
+					printf("%d, ", (int)pidFile);
 					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), base, *counter);					 
 				}		
 			}
@@ -319,7 +320,6 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 				}
 				else if(dataType == 's'){
 					newDataCompare->stringData = trimWord;
-					printf("%s | %s\n", fileDir, trimWord);
 				}
 
 				newDataRow->dataCompare = newDataCompare;
@@ -461,7 +461,9 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	printf("Initial PID: %d Current dir: %s\n", (int)getpid(), inDir);
+	//printf("Initial PID: %d Current dir: %s\n", (int)getpid(), inDir);
+	printf("Initial PID: %d\n", (int)getpid());
+	printf("PIDS of all child processes: ");
 
 	int * counter = (int *)mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 	//current process counts as 1
@@ -469,7 +471,7 @@ int main(int argc, char* argv[])
 
 	sortcsvFiles(inDir, outDir, colToSort, counter);
 
-	printf("process created: %d\n", *counter); 
+	printf("\nTotal number of processes: %d\n", *counter); 
 	//free(counter);
 
 

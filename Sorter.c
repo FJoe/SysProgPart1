@@ -168,6 +168,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 
 				//Child process sorts csv files in new directory
 				if(pidDir == 0){
+					//printf("%d, ", (int)getpid());
 					getcsvFilesHelp(base, newDir, outDir, colToSort, counter);	
 					_exit(0);
 				}
@@ -175,6 +176,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				else{
 					(*counter)++;
 					printf("%d, ", (int)pidDir);
+					fflush(stdout);
 					//printf("Child pid: %d Current pid:%d Current counter: %d Current dir: %s\n", (int)pidDir, (int)getpid(), *counter, base);	
 				} 
 				
@@ -187,10 +189,11 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			//If file is a csv file with correct column name
 			if(point != NULL && strcmp(point, ".csv") == 0 && getColNum(base, colToSort) != -1)
 			{
-	
 				pid_t pidFile = fork();
 				//Child process sorts file
-				if(pidFile == 0){
+				if(pidFile == 0){					
+					//printf("%d, ", (int)getpid());
+					//printf("here\n");
 					if(outDir == NULL){
 						sort(base, dirName, colToSort);
 					}
@@ -204,7 +207,8 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				else{
 					(*counter)++;
 					printf("%d, ", (int)pidFile);
-					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), base, *counter);					 
+					fflush(stdout);
+					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), newDirent->d_name, *counter);					 
 				}		
 			}
 

@@ -3,124 +3,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int* counter){
-	//If 255 csv files/directories were found
-	if((*counter) == 255)
-		return;
-
-	//Gets first file in directory dir
-	struct dirent* newDirent = readdir(dir);
-
-	//For every file in director dir
-	while(newDirent != NULL){
-		//Gets file into correct format for 
-		char* base = strdup(dirName);
-		base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
-		strcat(base, newDirent->d_name);
-
-		//If file is a directory
-		if(newDirent->d_type == DT_DIR && !(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0))
-		{
-			DIR* newDir = opendir(base);
-			//If new directory is found and not .git (too many directories inside)
-			if(newDir != NULL && strcmp(base, "./.git") != 0)
-			{
-				base = (char*) realloc(base, strlen(base) + strlen("/"));
-				strcat(base, "/");
-
-				pid_t pidDir = fork();
-
-				//Child process sorts csv files in new directory
-				if(pidDir == 0){
-					getcsvFilesHelp(base, newDir, outDir, colToSort, counter);	
-					_exit(0);
-				}
-				//Parent process continues sorting csv files in current directory
-				else{
-					(*counter)++;
-					//printf("Child pid: %d Current pid:%d Current counter: %d Current dir: %s\n", (int)pidDir, (int)getpid(), *counter, base);
-						
-
-				} 
-				
-			}			
-		}
-		//If file is not a directory
-		else{
-			char* point = strchr(newDirent->d_name, '.');
-
-			//If file is a csv file
-			if(point != NULL && strcmp(point, ".csv") == 0)
-			{
-				pid_t pidFile = fork();
-				
-				//Child process sorts file
-				if(pidFile == 0){
-					if(outDir == NULL){
-						sort(base, dirName, colToSort);
-					}
-					else{
-						sort(base, outDir, colToSort);
-					}
-					
-					_exit(0);
-				}
-				//Parent process continues sorting csv files in current directory
-				else{
-					(*counter)++;
-					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), base, *counter);					 
-				}		
-			}
-
-		}
-		free(base);
-		newDirent = readdir(dir); 
-	} 
-	while(wait(NULL) > 0){}		
-}
-
-
-void sortcsvFiles(char* dirName, char*outputDir, char* colToSort, int * counter){
-	DIR* dir = opendir(dirName);
-
-	if(!dir){
-		return;
-	}
-
-	if(strcmp(dirName, "./") != 0){
-		dirName = realloc(dirName, strlen(dirName) + strlen("/"));
-		strcat(dirName, "/");	
-	}
-
-	if(strcmp(outputDir, "./") != 0){
-		outputDir = realloc(outputDir, strlen(outputDir) + strlen("/"));
-		strcat(outputDir, "/");	
-	}
-	else{
-		outputDir = NULL;
-	}
-	getcsvFilesHelp(dirName, dir, outputDir, colToSort, counter);
-	return;
-}
-
-char* trimSpace(char* str){
-	int end = strlen(str) - 1;
-	while(str[end] == ' ' || str[end] == '\n' || str[end] == '\r')
-	{
-		str[end] = '\0';
-		end--;
-	}
-	
-	while(*str == ' ')
-	{
-		str++;
-	}
-
-
-
-	return str;
-}
-
 char getDataType(char* data){
 	if(strcmp(data, "color") == 0)
 		return 's';
@@ -180,11 +62,155 @@ char getDataType(char* data){
 	else if(strcmp(data, "movie_facebook_likes") == 0)
 		return 'n';
 
-	return 'e';
-		
+	return 'e';	
+}
+
+char* trimSpace(char* str){
+	int end = strlen(str) - 1;
+	while(str[end] == ' ' || str[end] == '\n' || str[end] == '\r')
+	{
+		str[end] = '\0';
+		end--;
+	}
+	while(*str == ' ')
+	{
+		str++;
+	}
+	return str;
+}
+
+
+int getColNum(char* fileDir, char* colToSort){
+	FILE* file = fopen(fileDir, "r");
+
+	const char delim[2] = ",";
+	char* row1 = (char*) calloc(1024, sizeof(char));
+	
+	int colNumToSort = 0;
+	if(fgets(row1, sizeof(char) * 1024, file) == NULL){
+		free(row1);
+		fclose(file);
+		return -1;
+	}
+	
+	char* curHead = strsep(&row1, delim);
+	while( curHead != NULL && strcmp(colToSort, trimSpace(curHead)) != 0){
+		curHead = strsep(&row1, delim);
+		colNumToSort++;
+	}
+
+	if(curHead == NULL){
+		free(row1);
+		fclose(file);
+		return -1;
+	}
+	return colNumToSort;
+} 
+
+void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int* counter){
+	//If 255 csv files/directories were found
+	if((*counter) == 255)
+		return;
+
+	//Gets first file in directory dir
+	struct dirent* newDirent = readdir(dir);
+
+	//For every file in director dir
+	while(newDirent != NULL){
+		//Gets file into correct format for 
+		char* base = strdup(dirName);
+		base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
+		strcat(base, newDirent->d_name);
+
+		//If file is a directory
+		if(newDirent->d_type == DT_DIR && !(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0))
+		{
+			DIR* newDir = opendir(base);
+			//If new directory is found and not .git (too many directories inside)
+			if(newDir != NULL && strcmp(base, "./.git") != 0)
+			{
+				base = (char*) realloc(base, strlen(base) + strlen("/"));
+				strcat(base, "/");
+					
+				pid_t pidDir = fork();
+
+				//Child process sorts csv files in new directory
+				if(pidDir == 0){
+					getcsvFilesHelp(base, newDir, outDir, colToSort, counter);	
+					_exit(0);
+				}
+				//Parent process continues sorting csv files in current directory
+				else{
+					(*counter)++;
+					//printf("Child pid: %d Current pid:%d Current counter: %d Current dir: %s\n", (int)pidDir, (int)getpid(), *counter, base);	
+				} 
+				
+			}			
+		}
+		//If file is not a directory
+		else{
+			char* point = strchr(newDirent->d_name, '.');
+
+			//If file is a csv file with correct column name
+			if(point != NULL && strcmp(point, ".csv") == 0 && getColNum(base, colToSort) != -1)
+			{
+				pid_t pidFile = fork();
+				//Child process sorts file
+				if(pidFile == 0){
+					if(outDir == NULL){
+						sort(base, dirName, colToSort);
+					}
+					else{
+						sort(base, outDir, colToSort);
+					}
+					
+					_exit(0);
+				}
+				//Parent process continues sorting csv files in current directory
+				else{
+					(*counter)++;
+					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), base, *counter);					 
+				}		
+			}
+
+		}
+		free(base);
+		newDirent = readdir(dir); 
+	} 
+	while(wait(NULL) > 0){}		
+}
+
+
+void sortcsvFiles(char* dirName, char*outputDir, char* colToSort, int * counter){
+	DIR* dir = opendir(dirName);
+
+	if(!dir){
+		return;
+	}
+
+	if(strcmp(dirName, "./") != 0){
+		dirName = realloc(dirName, strlen(dirName) + strlen("/"));
+		strcat(dirName, "/");	
+	}
+
+	if(strcmp(outputDir, "./") != 0){
+		outputDir = realloc(outputDir, strlen(outputDir) + strlen("/"));
+		strcat(outputDir, "/");	
+	}
+	else{
+		outputDir = NULL;
+	}
+	getcsvFilesHelp(dirName, dir, outputDir, colToSort, counter);
+	return;
 }
 
 void sort(char* fileDir, char* outDir, char* colToSort){
+	//If column to search for is found, get column number
+	int colNumToSort = getColNum(fileDir, colToSort);
+	
+	if(colNumToSort == -1)
+		return;
+
 	FILE* file = fopen(fileDir, "r");
 
 	//Get column heading and create copy of it
@@ -192,21 +218,8 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	if(fgets(header, sizeof(char) * 1024, file) == NULL){
 		return;
 	}
-	char* row1 = strdup(header);
-
-	//If column to search for is found, get column number
-	int colNumToSort = 0;
 	const char delim[2] = ",";
 	const char otherDelim[3] = "\"";
-	char* curHead = strsep(&row1, delim);
-	while( curHead != NULL && strcmp(colToSort, trimSpace(curHead)) != 0){
-		curHead = strsep(&row1, delim);
-		colNumToSort++;
-	}
-	if(curHead == NULL){
-		return;
-	}
-
 	const char slashDelim[2] = "/";
 	char* nextSep;
 	char* fileName;
@@ -320,6 +333,7 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	free(origRow);
 	free(list);
 
+	fclose(file);
 	fclose(outfp);
 }
 

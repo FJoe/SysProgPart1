@@ -45,6 +45,9 @@ void sortcsvFiles(char* dir, char* outputDir, char* colToSort, int* counter);
 //Helper method to getcsvFiles
 void sortcsvFilesHelp(char* dirName, DIR* dir, char* outputDir, char* colToSort, int* counter);
 
+//Gets col number of string in file header (first row of file)
+int getColNum(char* fileDir, char* colToSort);
+
 //sort csv file
 void sort(char* fileName, char* outDir, char* colToSort);
 

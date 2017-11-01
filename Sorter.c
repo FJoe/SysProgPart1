@@ -88,10 +88,11 @@ int getColNum(char* fileDir, char* colToSort){
 	}
 
 	const char delim[2] = ",";
-	char* row1 = (char*) calloc(1024, sizeof(char));
+	char* row1p = (char*) calloc(1024, sizeof(char));
+	char* row1 = row1p;
 	
 	if(fgets(row1, sizeof(char) * 1024, file) == NULL){
-		free(row1);
+		free(row1p);
 		fclose(file);
 		return -1;
 	}
@@ -102,8 +103,9 @@ int getColNum(char* fileDir, char* colToSort){
 		curHead = strsep(&row1, delim);
 		colNumToSort++;
 	}
-
+	free(row1p);
 	if(curHead == NULL){
+
 		fclose(file);
 		return -1;
 	}
@@ -151,7 +153,11 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 		}
 		if(sortedBy != NULL)
 			sortedBy[strlen(sortedBy) - 4] = '\0';
+
+		//If file is already sorted by correct parameter
 		if(sortedBy != NULL && strcmp(sortedBy, colToSort) == 0){
+
+
 
 		}
 		//If file is a directory
@@ -174,7 +180,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				//Parent process continues sorting csv files in current directory
 				else{
 					(*counter)++;
-					printf("%d, ", (int)pidDir);
+					//printf("%d, ", (int)pidDir);
 					//printf("Child pid: %d Current pid:%d Current counter: %d Current dir: %s\n", (int)pidDir, (int)getpid(), *counter, base);	
 				} 
 				
@@ -203,12 +209,13 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				//Parent process continues sorting csv files in current directory
 				else{
 					(*counter)++;
-					printf("%d, ", (int)pidFile);
+					//printf("%d, ", (int)pidFile);
 					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), base, *counter);					 
 				}		
 			}
 
 		}
+		free(base);
 		newDirent = readdir(dir); 
 	} 
 	while(wait(NULL) > 0){}		
@@ -232,12 +239,12 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 		return;
 
 	FILE* file = fopen(fileDir, "r");
-
 	//Get column heading and create copy of it
 	char* header = (char*) calloc(1024, sizeof(char));
 	if(fgets(header, sizeof(char) * 1024, file) == NULL){
 		return;
 	}
+
 	const char delim[2] = ",";
 	const char otherDelim[3] = "\"";
 	const char slashDelim[2] = "/";
@@ -260,8 +267,6 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	strcat(outputFile, "-sorted-");
 	strcat(outputFile, colToSort);
 	strcat(outputFile, ".csv");
-
-	//printf("FileDir: %s   |   OutputFile: %s   |   OutDir: %s\n\n", fileDir, outputFile, outDir);
 	
 	FILE* outfp;
 	outfp = fopen(outputFile, "w");
@@ -282,7 +287,8 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 		DataRow* newDataRow = (DataRow*) malloc(sizeof(DataRow));
 		newDataRow->dataType = dataType;
 
-		char* rowDelim = strdup(origRow);
+		char* origRowDelim = strdup(origRow);
+		char* rowDelim = origRowDelim;
 
 		//newRow is data for new row with trimmed spaces
 		char* newRow = (char*) calloc(1024, sizeof(char));
@@ -291,27 +297,29 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 		char* curWord = strsep(&rowDelim, delim);
 		int firstWord = 1;
 		int i = 0;
+
 		while(curWord != NULL){
 			if(firstWord)
 				firstWord = 0;
 			else
 				strcat(newRow, ",");
 
-			char wordToAdd[300];  
-			strcpy(wordToAdd, curWord);
-			
-
-			if(wordToAdd[0] == '"' && wordToAdd[strlen(wordToAdd) - 1] != '"')
+			char* wordToAdd = strdup(curWord);
+			if(strlen(wordToAdd) > 1 && wordToAdd[0] == '"' && wordToAdd[strlen(wordToAdd) - 1] != '"')
 			{
 				char* otherHalf = strsep(&rowDelim, otherDelim);
 
+				wordToAdd = (char*)realloc(wordToAdd, strlen(wordToAdd) + strlen(",") + strlen(otherHalf) + strlen("\""));
 				strcat(wordToAdd, ",");
 				strcat(wordToAdd, otherHalf);	
 				strcat(wordToAdd, "\"");		
 
 				curWord = strsep(&rowDelim, delim);
+
+
 			}
-			char* trimWord = trimSpace(wordToAdd);
+			char* trimOrig = strdup(wordToAdd);
+			char* trimWord = trimSpace(trimOrig);
 
 			if(i == colNumToSort){
 				DataCompare* newDataCompare = (DataCompare*) malloc(sizeof(DataCompare));
@@ -321,15 +329,19 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 				else if(dataType == 's'){
 					newDataCompare->stringData = trimWord;
 				}
-
 				newDataRow->dataCompare = newDataCompare;
 			}
 
 			strcat(newRow, trimWord);
 			curWord = strsep(&rowDelim, delim);
 
+			if(wordToAdd[0] != '"')
+				free(wordToAdd);
+
 			i++;
 		}
+		free(origRowDelim);
+
 		strcat(newRow, "\n");
 		newDataRow->data = newRow;
 		list[curRowNum] = newDataRow;
@@ -341,12 +353,11 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 
 	//Prints list then frees it
 	int j;	
-	
 	for(j = 0; j < curRowNum; j++)
 	{
 		fprintf(outfp, list[j]->data);
 
-		free(list[j]->dataCompare);
+		//free(list[j]->dataCompare);
 		free(list[j]->data);
 		free(list[j]);
 	}
@@ -463,7 +474,7 @@ int main(int argc, char* argv[])
 
 	//printf("Initial PID: %d Current dir: %s\n", (int)getpid(), inDir);
 	printf("Initial PID: %d\n", (int)getpid());
-	printf("PIDS of all child processes: ");
+	//printf("PIDS of all child processes: ");
 
 	int * counter = (int *)mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 	//current process counts as 1

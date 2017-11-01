@@ -21,8 +21,8 @@ void merge(DataRow ** array, int left, int mid, int right)
 	int tempRightArraySize = right - mid;
 
 	//create temporary arrays, since we do not know how big these arrays will be, put them into heap to avoid stackoverflow
-	DataRow ** tempLeftArray = (DataRow **)malloc(tempLeftArraySize * sizeof(DataRow));
-	DataRow ** tempRightArray = (DataRow **)malloc(tempRightArraySize * sizeof(DataRow));
+	DataRow* tempLeftArray[tempLeftArraySize];
+	DataRow* tempRightArray[tempRightArraySize];
 
 	//counters for later use
 	int i, j;
@@ -30,14 +30,13 @@ void merge(DataRow ** array, int left, int mid, int right)
 	//copy items into left array
 	for(i = 0; i < tempLeftArraySize; i++)
 	{	
-		//purpose of [left + j] is the mergesort can happen at different part of the original array
-		tempLeftArray[i] = array[left + i];
+		tempLeftArray[i] = array[left+i];
 	}
 
 	//copy items into right array
 	for(j = 0; j < tempRightArraySize; j++)
 	{
-		tempRightArray[j] = array[mid + j + 1];
+		tempRightArray[j] = array[mid+j+1];
 	}
 	
 	//i is index of  leftArray, j is index of rightArray, k is index of original array
@@ -77,9 +76,6 @@ void merge(DataRow ** array, int left, int mid, int right)
 	    array[k] = tempRightArray[j];
 	}
     
-	//free pointers
-	free(tempLeftArray);
-	free(tempRightArray);
 }
 
 /*

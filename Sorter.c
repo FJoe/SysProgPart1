@@ -83,16 +83,20 @@ char* trimSpace(char* str){
 int getColNum(char* fileDir, char* colToSort){
 	FILE* file = fopen(fileDir, "r");
 
+	if(!file){
+		return -1;
+	}
+
 	const char delim[2] = ",";
 	char* row1 = (char*) calloc(1024, sizeof(char));
 	
-	int colNumToSort = 0;
 	if(fgets(row1, sizeof(char) * 1024, file) == NULL){
 		free(row1);
 		fclose(file);
 		return -1;
 	}
 	
+	int colNumToSort = 0;
 	char* curHead = strsep(&row1, delim);
 	while( curHead != NULL && strcmp(colToSort, trimSpace(curHead)) != 0){
 		curHead = strsep(&row1, delim);
@@ -100,7 +104,6 @@ int getColNum(char* fileDir, char* colToSort){
 	}
 
 	if(curHead == NULL){
-		free(row1);
 		fclose(file);
 		return -1;
 	}
@@ -122,12 +125,36 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 		base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
 		strcat(base, newDirent->d_name);
 
-		char* fileName = strdup(newDirent->d_name);
-		
 		//If file is already "-sorted" with correct parameter
-		if(fileName == NULL){
-		}
+		char* fileName = strdup(newDirent->d_name);
+		const char delim[2] = "-";
 
+		char* sortedBy = NULL;
+		char* nextSep;
+		int prevDash = 0;
+		int first = 1;
+
+		while((nextSep = strsep(&fileName, delim)) != NULL)
+		{
+			if(first)
+				first = 0;
+			else{
+				if(prevDash){
+					sortedBy = nextSep;
+					prevDash = 0;
+				}
+				if(strcmp(nextSep, "sorted") == 0)
+					prevDash = 1;
+				else
+					prevDash = 0;
+				printf("%s\n", nextSep);
+			}
+		}
+		if(sortedBy != NULL)
+			sortedBy[strlen(sortedBy) - 4] = '\0';
+		if(sortedBy != NULL && strcmp(sortedBy, colToSort) == 0){
+
+		}
 		//If file is a directory
 		else if(newDirent->d_type == DT_DIR && !(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0))
 		{
@@ -160,6 +187,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			//If file is a csv file with correct column name
 			if(point != NULL && strcmp(point, ".csv") == 0 && getColNum(base, colToSort) != -1)
 			{
+	
 				pid_t pidFile = fork();
 				//Child process sorts file
 				if(pidFile == 0){
@@ -180,32 +208,18 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			}
 
 		}
-		free(base);
 		newDirent = readdir(dir); 
 	} 
 	while(wait(NULL) > 0){}		
 }
 
 
-void sortcsvFiles(char* dirName, char*outputDir, char* colToSort, int * counter){
+void sortcsvFiles(char* dirName, char* outputDir, char* colToSort, int * counter){
 	DIR* dir = opendir(dirName);
-
 	if(!dir){
 		return;
 	}
 
-	if(strcmp(dirName, "./") != 0){
-		dirName = realloc(dirName, strlen(dirName) + strlen("/"));
-		strcat(dirName, "/");	
-	}
-
-	if(strcmp(outputDir, "./") != 0){
-		outputDir = realloc(outputDir, strlen(outputDir) + strlen("/"));
-		strcat(outputDir, "/");	
-	}
-	else{
-		outputDir = NULL;
-	}
 	getcsvFilesHelp(dirName, dir, outputDir, colToSort, counter);
 	return;
 }
@@ -213,7 +227,6 @@ void sortcsvFiles(char* dirName, char*outputDir, char* colToSort, int * counter)
 void sort(char* fileDir, char* outDir, char* colToSort){
 	//If column to search for is found, get column number
 	int colNumToSort = getColNum(fileDir, colToSort);
-	
 	if(colNumToSort == -1)
 		return;
 
@@ -247,7 +260,7 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	strcat(outputFile, colToSort);
 	strcat(outputFile, ".csv");
 
-	printf("FileDir: %s   |   OutputFile: %s   |   OutDir: %s\n\n", fileDir, outputFile, outDir);
+	//printf("FileDir: %s   |   OutputFile: %s   |   OutDir: %s\n\n", fileDir, outputFile, outDir);
 	
 	FILE* outfp;
 	outfp = fopen(outputFile, "w");
@@ -306,6 +319,7 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 				}
 				else if(dataType == 's'){
 					newDataCompare->stringData = trimWord;
+					printf("%s | %s\n", fileDir, trimWord);
 				}
 
 				newDataRow->dataCompare = newDataCompare;
@@ -327,6 +341,7 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 
 	//Prints list then frees it
 	int j;	
+	
 	for(j = 0; j < curRowNum; j++)
 	{
 		fprintf(outfp, list[j]->data);
@@ -377,7 +392,7 @@ int main(int argc, char* argv[])
 
 	char* inDir = NULL;
 
-
+	//Checks if given -d folder. If none then gets current directory
 	if(argc > 3 && strcmp(argv[3], "-d") == 0)
 	{
 		//Given is relative path
@@ -398,6 +413,10 @@ int main(int argc, char* argv[])
 			inDir = (char*) realloc(inDir, strlen(inDir) + strlen(argv[4]));
 			strcat(inDir, argv[4]);
 		}
+		if(inDir[strlen(inDir) - 1] != '/'){
+			inDir = (char*) realloc(inDir, strlen(inDir) + strlen("/"));
+			strcat(inDir, "/");
+		}
 
 	}
 	else{
@@ -407,6 +426,7 @@ int main(int argc, char* argv[])
 		inDir[2] = '\0'; 
 	}
 
+	//Checks if -o directory. If none then returns null
 	char* outDir = NULL;
 	if((argc > 3 && argc < 6 && strcmp(argv[3], "-o") == 0) || (argc > 5 && strcmp(argv[5], "-o") == 0)){	
 		char* output = NULL;
@@ -435,6 +455,10 @@ int main(int argc, char* argv[])
 			outDir = (char*) realloc(outDir, strlen(outDir) + strlen(output));
 			strcat(outDir, output);
 		}
+		if(outDir[strlen(outDir) - 1] != '/'){
+			outDir = (char*) realloc(outDir, strlen(outDir) + strlen("/"));
+			strcat(outDir, "/");
+		}
 	}
 
 	printf("Initial PID: %d Current dir: %s\n", (int)getpid(), inDir);
@@ -444,9 +468,6 @@ int main(int argc, char* argv[])
 	*counter = 1;
 
 	sortcsvFiles(inDir, outDir, colToSort, counter);
-
-	free(inDir);
-	free(outDir);
 
 	printf("process created: %d\n", *counter); 
 	//free(counter);

@@ -40,7 +40,6 @@ void merge(DataRow ** array, int left, int mid, int right)
 		tempRightArray[j] = array[mid + j + 1];
 	}
 	
-
 	//i is index of  leftArray, j is index of rightArray, k is index of original array
 	i = 0;
 	j = 0;

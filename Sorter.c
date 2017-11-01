@@ -122,8 +122,14 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 		base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
 		strcat(base, newDirent->d_name);
 
+		char* fileName = strdup(newDirent->d_name);
+		
+		//If file is already "-sorted" with correct parameter
+		if(fileName == NULL){
+		}
+
 		//If file is a directory
-		if(newDirent->d_type == DT_DIR && !(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0))
+		else if(newDirent->d_type == DT_DIR && !(strcmp(newDirent->d_name, ".") == 0 || strcmp(newDirent->d_name, "..") == 0))
 		{
 			DIR* newDir = opendir(base);
 			//If new directory is found and not .git (too many directories inside)
@@ -368,39 +374,79 @@ int main(int argc, char* argv[])
 		}
 	}
 	char* colToSort = argv[2];
-	char* base = (char*) malloc(sizeof(char) * 3);
-	base[0] = '.';
-	base[1] = '/';
-	base[2] = '\0';
-	char* outputBase = strdup(base);
+
+	char* inDir = NULL;
+
 
 	if(argc > 3 && strcmp(argv[3], "-d") == 0)
 	{
-		base = (char*) realloc(base, strlen(base) + strlen(argv[4]));
-		strcat(base, argv[4]);
+		//Given is relative path
+		if(strlen(argv[4]) > 1 && argv[4][0] == '.' && argv[4][1] == '/'){
+			inDir = strdup(argv[4]);\
+		}
+		//Given is absolute path
+		else if(strlen(argv[4]) > 0 && argv[4][0] == '/'){
+			inDir = strdup(argv[4]);
+		}
+		//Given is assumed to be relative path
+		else{
+			inDir = (char*) malloc(sizeof(char) * 3);
+			inDir[0] = '.';
+			inDir[1] = '/';
+			inDir[2] = '\0'; 
+
+			inDir = (char*) realloc(inDir, strlen(inDir) + strlen(argv[4]));
+			strcat(inDir, argv[4]);
+		}
+
+	}
+	else{
+		inDir = (char*) malloc(sizeof(char) * 3);
+		inDir[0] = '.';
+		inDir[1] = '/';
+		inDir[2] = '\0'; 
 	}
 
-	if((argc > 3 && argc < 6 && strcmp(argv[3], "-o") == 0) || (argc > 5 && strcmp(argv[5], "-o") == 0)){		
+	char* outDir = NULL;
+	if((argc > 3 && argc < 6 && strcmp(argv[3], "-o") == 0) || (argc > 5 && strcmp(argv[5], "-o") == 0)){	
+		char* output = NULL;
 		if(argc < 6){
-			outputBase = (char*) realloc(outputBase, strlen(outputBase) + strlen(argv[4]));
-			strcat(outputBase, argv[4]);
+			output = strdup(argv[4]);
 		}
 		else{
-			outputBase = (char*) realloc(outputBase, strlen(outputBase) + strlen(argv[6]));
-			strcat(outputBase, argv[6]);
+			output = strdup(argv[6]);
+		}
+
+		//Given is relative path
+		if(strlen(output) > 1 && output[0] == '.' && output[1] == '/'){
+			outDir = strdup(output);\
+		}
+		//Given is absolute path
+		else if(strlen(output) > 0 && output[0] == '/'){
+			outDir = strdup(output);
+		}
+		//Given is assumed to be relative path
+		else{
+			outDir = (char*) malloc(sizeof(char) * 3);
+			outDir[0] = '.';
+			outDir[1] = '/';
+			outDir[2] = '\0'; 
+
+			outDir = (char*) realloc(outDir, strlen(outDir) + strlen(output));
+			strcat(outDir, output);
 		}
 	}
 
-	printf("Initial PID: %d Current dir: %s\n", (int)getpid(), base);
+	printf("Initial PID: %d Current dir: %s\n", (int)getpid(), inDir);
 
 	int * counter = (int *)mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 	//current process counts as 1
 	*counter = 1;
 
-	sortcsvFiles(base, outputBase, colToSort, counter);
+	sortcsvFiles(inDir, outDir, colToSort, counter);
 
-	free(base);
-	free(outputBase);
+	free(inDir);
+	free(outDir);
 
 	printf("process created: %d\n", *counter); 
 	//free(counter);

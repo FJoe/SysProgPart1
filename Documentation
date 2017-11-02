@@ -111,3 +111,5 @@ We broke the testing into multiple pieces to ensure each part worked independent
 1) Unpack tar file: tar xvf Project1.tar
 2) Run "make all" on terminal
 3) Type: ./Sorter -c <colToSort> <-d> <InputDirectory> <-o> <OutputDirectory>
+
+<InputDirectory> and <OutputDirectory> : If the directory begins with '/' then it is assumed to be an absolute path. If it begins with "./" or nothing, then it is assumed to be a relative path.

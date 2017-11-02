@@ -181,9 +181,13 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				//Parent process continues sorting csv files in current directory
 				else{
 					(*counter)++;
-
+<<<<<<< HEAD
+					//printf("%d, ", (int)pidDir);
+=======
 					printf("%d, ", (int)pidDir);
-					fflush(stdout);	
+					fflush(stdout);
+>>>>>>> 04517ca7ff26b8a5d3d11d0bc3492a835be6cfb8
+					//printf("Child pid: %d Current pid:%d Current counter: %d Current dir: %s\n", (int)pidDir, (int)getpid(), *counter, base);	
 				} 
 				
 			}			
@@ -211,9 +215,15 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				}
 				//Parent process continues sorting csv files in current directory
 				else{
-					(*counter)++;				 
+					(*counter)++;
+<<<<<<< HEAD
+					//printf("%d, ", (int)pidFile);
+					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), base, *counter);					 
+=======
 					printf("%d, ", (int)pidFile);
 					fflush(stdout);
+					//printf("Child pid: %d Current pid:%d Current file: %s Current counter: %d\n", (int)pidFile, (int)getpid(), newDirent->d_name, *counter);					 
+>>>>>>> 04517ca7ff26b8a5d3d11d0bc3492a835be6cfb8
 				}		
 			}
 

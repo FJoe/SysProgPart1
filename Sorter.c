@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
 
 	//printf("Initial PID: %d Current dir: %s\n", (int)getpid(), inDir);
 	printf("Initial PID: %d\n", (int)getpid());
-	//printf("PIDS of all child processes: ");
+	printf("PIDS of all child processes: ");
 
 	int * counter = (int *)mmap(NULL, sizeof(int), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 	//current process counts as 1

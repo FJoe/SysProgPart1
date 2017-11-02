@@ -267,11 +267,12 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 
 	char* outputFile = strdup(outDir);
 
-	outputFile = realloc(outputFile, strlen(outputFile) + strlen(fileName) + strlen("-sorted-") + strlen(colToSort) + strlen(".csv"));
+	outputFile = realloc(outputFile, strlen(outputFile) + strlen(fileName) + strlen("-sorted-") + strlen(colToSort) + strlen(".csv") + 1);
 	strcat(outputFile, fileName);
 	strcat(outputFile, "-sorted-");
 	strcat(outputFile, colToSort);
-	strcat(outputFile, ".csv\0");
+	strcat(outputFile, ".csv");
+	strcat(outputFile, "\0");
 
 	
 	FILE* outfp;

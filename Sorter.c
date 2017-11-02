@@ -169,7 +169,6 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			//If new directory is found and not .git (too many directories inside)
 			if(newDir != NULL && strcmp(base, "./.git") != 0)
 			{
-			printf("DIR: %s\n\n\n", base);
 				base = (char*) realloc(base, strlen(base) + strlen("/"));
 				strcat(base, "/");
 					
@@ -177,7 +176,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 
 				//Child process sorts csv files in new directory
 				if(pidDir == 0){
-					//printf("%d, ", (int)getpid());
+					printf("%d, ", (int)getpid());
 					getcsvFilesHelp(base, newDir, outDir, colToSort, counter);	
 					_exit(0);
 				}
@@ -198,12 +197,10 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			//If file is a csv file with correct column name
 			if(point != NULL && strcmp(point, ".csv") == 0 && getColNum(base, colToSort) != -1)
 			{
-				printf("FILE: %s\n\n\n", base);
 				pid_t pidFile = fork();
 				//Child process sorts file
 				if(pidFile == 0){					
-					//printf("%d, ", (int)getpid());
-					//printf("here\n");
+					printf("%d, ", (int)getpid());
 					if(outDir == NULL){
 						sort(base, dirName, colToSort);
 					}
@@ -216,7 +213,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				//Parent process continues sorting csv files in current directory
 				else{
 					(*counter)++;				 
-					//printf("%d, ", (int)pidFile);
+					printf("%d, ", (int)pidFile);
 					fflush(stdout);
 				}		
 			}
@@ -279,6 +276,8 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	FILE* outfp;
 	outfp = fopen(outputFile, "w");
 
+	free(outputFile);
+
 	//Print column headers to output file
 	fprintf(outfp, header);
 
@@ -316,18 +315,17 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 			if(strlen(wordToAdd) > 1 && wordToAdd[0] == '"' && wordToAdd[strlen(wordToAdd) - 1] != '"')
 			{
 				char* otherHalf = strsep(&rowDelim, otherDelim);
-
 				wordToAdd = (char*)realloc(wordToAdd, strlen(wordToAdd) + strlen(",") + strlen(otherHalf) + strlen("\""));
 				strcat(wordToAdd, ",");
 				strcat(wordToAdd, otherHalf);	
-				strcat(wordToAdd, "\"");		
+				strcat(wordToAdd, "\"");	
 
 				curWord = strsep(&rowDelim, delim);
 
 
 			}
-			char* trimOrig = strdup(wordToAdd);
-			char* trimWord = trimSpace(trimOrig);
+			char* origPointer = wordToAdd;
+			char* trimWord = trimSpace(origPointer);
 
 			if(i == colNumToSort){
 				DataCompare* newDataCompare = (DataCompare*) malloc(sizeof(DataCompare));
@@ -342,9 +340,6 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 
 			strcat(newRow, trimWord);
 			curWord = strsep(&rowDelim, delim);
-
-			if(wordToAdd[0] != '"')
-				free(wordToAdd);
 
 			i++;
 		}

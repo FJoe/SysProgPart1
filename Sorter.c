@@ -271,7 +271,8 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	strcat(outputFile, fileName);
 	strcat(outputFile, "-sorted-");
 	strcat(outputFile, colToSort);
-	strcat(outputFile, ".csv");
+	strcat(outputFile, ".csv\0");
+
 	
 	FILE* outfp;
 	outfp = fopen(outputFile, "w");

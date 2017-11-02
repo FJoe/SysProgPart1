@@ -114,14 +114,16 @@ int getColNum(char* fileDir, char* colToSort){
 
 void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int* counter){
 	//If 255 csv files/directories were found
-	if((*counter) == 255)
-		return;
+	if((*counter) == 255){
+		_exit(0);
+
+	}
 
 	//Gets first file in directory dir
 	struct dirent* newDirent = readdir(dir);
 
 	//For every file in director dir
-	while(newDirent != NULL){
+	while(newDirent != NULL && (*counter) < 255){
 		//Gets file into correct format for 
 		char* base = strdup(dirName);
 		base = (char*) realloc(base, strlen(base) + strlen(newDirent->d_name));
@@ -167,6 +169,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			//If new directory is found and not .git (too many directories inside)
 			if(newDir != NULL && strcmp(base, "./.git") != 0)
 			{
+			printf("DIR: %s\n\n\n", base);
 				base = (char*) realloc(base, strlen(base) + strlen("/"));
 				strcat(base, "/");
 					
@@ -195,6 +198,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			//If file is a csv file with correct column name
 			if(point != NULL && strcmp(point, ".csv") == 0 && getColNum(base, colToSort) != -1)
 			{
+				printf("FILE: %s\n\n\n", base);
 				pid_t pidFile = fork();
 				//Child process sorts file
 				if(pidFile == 0){					
@@ -212,7 +216,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 				//Parent process continues sorting csv files in current directory
 				else{
 					(*counter)++;				 
-					printf("%d, ", (int)pidFile);
+					//printf("%d, ", (int)pidFile);
 					fflush(stdout);
 				}		
 			}
@@ -236,6 +240,7 @@ void sortcsvFiles(char* dirName, char* outputDir, char* colToSort, int * counter
 }
 
 void sort(char* fileDir, char* outDir, char* colToSort){
+
 	//If column to search for is found, get column number
 	int colNumToSort = getColNum(fileDir, colToSort);
 	if(colNumToSort == -1)

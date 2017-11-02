@@ -475,7 +475,6 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	//printf("Initial PID: %d Current dir: %s\n", (int)getpid(), inDir);
 	printf("Initial PID: %d\n", (int)getpid());
 	printf("PIDS of all child processes: ");
 

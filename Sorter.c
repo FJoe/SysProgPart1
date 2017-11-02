@@ -218,7 +218,7 @@ void getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int
 			}
 
 		}
-		free(base);
+		//free(base);
 		newDirent = readdir(dir); 
 	} 
 	while(wait(NULL) > 0){}		
@@ -360,10 +360,10 @@ void sort(char* fileDir, char* outDir, char* colToSort){
 	{
 		fprintf(outfp, list[j]->data);
 
-		//free(list[j]->dataCompare);
+		free(list[j]->dataCompare);
 		free(list[j]->data);
 		free(list[j]);
-	}
+	} 
 	free(header);
 	free(origRow);
 	free(list);

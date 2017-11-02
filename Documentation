@@ -1,66 +1,113 @@
-=====Design=====
+MergeSort is recycled from the previous project.
 
-We created 2 structs for this program, DataRow and DataCompare.
+======Design=====
+We created 4 methods to supplement our previous project.
 
-union DataCompare represented the data the user wanted to sort by. We chose to use union because we can change the datatype between the two without using extra space in memory.
-There are 2 fields in DataCompare:
-	double numData - numeric data, used double as it can encompass the largest amount of data
-	char * stringData - string data, used to store strings for comparison
+1st method:
+-------------------------------------
+sortcsvFiles(char* dirName, char* outputDir, char* colToSort, int* processCounter);
 
-struct DataRow represented each row inside the csv. 
-There are 3 fields in DataRow:
-	char DataType - represented the type of data that we needed to compare. 'n' represents numeric data types and 's' represents string data types
-	char * Data - pointer to the string that holds all data. E.G. "firstname, lastname, age, birthdate"
-	DataCompare * dataCompare -  points to a struct of DataCompare that tells us which field we are comparing. 
+Purpose: 
+The method first opens the directory under dirName and then does string comparison checks to ensure that the dirName (directory name) and outputDir (output directory location) are in proper format so when we save the files, we are putting the files in the proper location. 
 
-How the DataRow would be represented: 
-{DataType = 'n', Data = "Peter, Jeng, 20, 08/15/1997", dataCompare->numData = 20}. Data follows the order: "firstname, lastname, age, birthdate"
+The method will call another method called getcsvFilesHelp(...) to actually fork and sort the files.
 
-By using the struct DataRow and union DataCompare, we are able to store information regarding how we need to process the data as well as the exact data that we need to use to compare between one another.
+Parameters:
+	char* dirName - the directory name we will start sorting from
+	char* outputDir - the directory name we will output all csv files to. If NULL, then there are no output directories specified.
+	char* colToSort - the column to sort based on user input
+	int* processCounter - a shared memory location that will count the number of allocated processes
 
-Inside Sorter.c, we used a double pointer array called DataRow ** List. This list is what is being sent into mergeSort and each index is a DataRow.
-By passing the array of struct into MergeSort, we can sort in a generic manner without having to change the parameters of the function (Ex. sort between string and numbers).
+NOTE: colToSort and processCounter aren't used in this method, it is only an intermediate value passed to another method
 
-Inside the MergeSort, we first recursively call upon mergeSort to split the arrays into subarrays as is done in the algorithm. Once the arrays are split to its atomic length of 1, we merge these arrays back together. By calling merge(), we are putting the subarrays back into the original arrays while doing comparisons(sorting) in the subarrays. At the end of the recursive call, the original array will be merged and sorted.
+2nd method:
+-------------------------------------
+getcsvFilesHelp(char* dirName, DIR* dir, char* outDir, char* colToSort, int* processCounter);
 
-Inside Sorter.c, we are also doing checks on the user input to ensure the program functions correctly.
-The tests are:
-	1) Check to see if we have the correct number of arguments
-	2) Check to see if we are sorting by column '-c'
-	3) Check to see if we are given a file to sort or if it exists
-	4) Check to see if the given column exists in the movie_metadata.csv file
+Purpose:
+The method uses DIR* dir to find the files inside the directory. We put the dir through a loop and after each file it encounters, we check whether the file encountered is a directory or a csv file. 
+There are two possibilites:
+	1) Encounters a directory: fork the program and calls getcsvFilesHelp() again. This is similar to recursion; we start traversing the nested directory and sees if the files contained inside are directory or csv files. In this case, the base case would be all files inside the directory are NON-DIRECTORY files.
 
-Afterwards, we implement a trimSpace function that removes leading and trailing spaces. This will ensure data integrity during sorting.
+	2) Encounters a csv file: fork the program and calls Sort() on the csv file. Depending on char* outDir, we place the file in the proper location
 
-At the end of the program, we free up all pointers to ensure no memory leaks occur.
+	***IMPORTANT***: For forking a file, we are FIRST checking to see if the file is a valid csv file, and then forking. Therefore, the number of process are at the lowest number possible. The reason we implemented this was because creating a process requires both time/space. By first checking if the file is a valid csv file in the current process, we are saving both time(duplicating a process) and resource(memory allocation for process). In a scenario where the file is invalid, a fork first then check approach is not optimal because the fork returns immediately and the rest of the process is not used, thus wasting time and space. 
 
-=====Assumptions=====
-Assumed the column names are the ones given in the movie_metadata.csv
+
+Parameters:
+	char* dirName - used as an intermediate value to pass to sort as well as string concatenation for directory/file
+	DIR* dir - Current directory we are working on, contains all information we need to check for file or directory
+	char* outDir - the directory name we will output all csv files to. If NULL, then there are no output directories specified.
+	char* colToSort - the column to sort based on user input
+	int* processCounter - a shared memory location that will count the number of allocated processes
+
+===Implementation of fork and wait===
+This is inside getcsvFilesHelp()
+For fork and wait, we are forking the directory/file and calling sort on the file. The parent process waits when it has traversed all of the files in its current directory and has forked all appropriate processes. By doing this, we are minimizing the time the parent has to wait for all its child process. 
+The implementation in pseudocode:
+
+while(directory has file){
+	if(current file is directory){
+		pid = fork();
+		if(pid == 0)
+			call getcsvFilesHelp();
+		else
+			processCounter++;
+	}
+	else{
+		pid = fork();
+		if(pid == 0)
+			sort();
+		else
+			processCounter++;
+	}
+}
+while(wait(NULL) > 0){}
+
+
+For the line while(wait(NULL) > 0){}, the code checks whether the current process has any child process. If there is child process, then wait(NULL) returns
+a value greater than 0. If no child, returns -1. This ensures that theres no zombie/orphan processes.
+
+3rd method:
+-------------------------------------
+sort(char* fileDir, char* outDir, char* colToSort);
+
+Purpose:
+This method does the actual sorting of the csv file. This is reused code from previous project which includes initializing the data structure we used to sort as well as calling MergeSort on the file. 
+
+Parameters:
+	char* fileDir - name of the file to sort
+	char* outDir - the directory name we will output all csv files to. If NULL, no output directories specified and we save to current directory
+	char* colToSort - the column to sort based on user input
+
+4th method:
+-------------------------------------
+int getColNum(char* fileDir, char* colToSort);
+
+Purpose:
+Validates the csv file. The method checks whether the csv file contains the column that needs to be sorted. If it contains the column, return column number in the file. If no column found, return -1.
+
+Parameters:
+	char* fileDir - contains the csv file to check
+	char* colToSort - name of column to sort by
+
+======Assumptions=====
+- we assumed the input format follows the order of -c columnToSort, -d directoryToStart, -o outputDirectory
+- we assumed that the total number of directory and files does not exceed 255. 
 
 =====Difficulties=====
-Creating the MergeSort was pretty difficult because debugging the MergeSort step by step using recursion took a very long time.
-At first, we used a simple int array to test our MergeSort to ensure that sorting was done correctly. However, the results were not the ones we expected so we had to take our time to step through our stackframes to see what went wrong. At the end, we were able to locate the problems and fix MergeSort. Implementation of DataRow ** List did not have any problems inside the MergeSort algorithim
+We had trouble with the forking process. Initially, we called wait immediately for the parent while we were inside the loop. This resulted in serial processing for the program because the parent could not continue to the next file until the child process has exited. Therefore, we had to restructure the fork and wait so that the parent can traverse all files while forking without having to wait for child process.
 
-The movie_title had commas which caused problems with our csv delimiters. We realized this problem because a majority of rows adhered to the sorting algorithim, but there would be random data that made no sense (e.g: 1.0, 1.0, 1.1, 1.2, 1.3, 5.0, 1.4, 2.1, the 5.0 was out of place). This problem was hard to catch because we had to slowly analyze the data to see why some columns did not sort properly. We realized that the ',' delimiter was causing problems with the comma in the title and this made it difficult to work with out code. We were unable to work around this error so some rows were not sorted properly because the delimiter could not be differentiated with the commas in the title.
+Another difficulty was passing the number of child process allocated back to the parent. We tried to pass the result through exit and accept the value using waitpid() to no avail. Therefore, we changed tatic and used shared memory between all process to increment the counter. 
 
 =====Testing Procedures=====
 We broke the testing into multiple pieces to ensure each part worked independently.
-1) Tested trimSpace on small strings
-2) MergeSort on int arrays to ensure sorting was correct
-3) Tested the read file to ensure we are storing the list correctly(replica of csv file)
-4) Joined each step together until we could sort test.csv (a small file we wrote containing test data)
-5) Used ./sorter on movie_metadata.csv to ensure sorting could be done on large datasets.
+1) Tested the traversal of directories without fork to ensure that the method could be called recursively. 
+2) Tested the traversal of directories in directores other than current directory (-d aDirectory).
+3) Tested the sort to ensure that the sorted files went to the proper location, depending on user input
+4) Tested fork to ensure that we can split the traversing and sorting in multiple processes without any overlaps.
 
-HOW TO USE OUR CODE:
-1) Unpack tar file: tar xvf Project0.tar
-2) Run make all on the terminal
-3) Type: cat movie_metadata.csv | ./sorter -c <column to sort> > sortedmovies.csv
-
-
-
-
-
-
-
-
-
+=====How to use our code=====
+1) Unpack tar file: tar xvf Project1.tar
+2) Run "make all" on terminal
+3) Type: ./Sorter -c <colToSort> <-d> <InputDirectory> <-o> <OutputDirectory>
